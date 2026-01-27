@@ -9,20 +9,15 @@ ACCESS_TOKEN = "QtQPpZuSBaSPmiRQzSDa"
 TOPIC = "v1/devices/me/telemetry"
 BUFFER_FILE = "testpy.txt"
 
-# biến cờ trạng thái kết nối
+
 connected = False
 
-# =======================
-# lưu dữ liệu khi mất mạng
-# =======================
+
 def save_to_file(data_json):
     with open(BUFFER_FILE, "a", encoding="utf-8") as f:
         f.write(data_json + "\n")
     print("Đã lưu vào file tạm")
 
-# =======================
-# gửi lại dữ liệu tồn
-# =======================
 def send_buffer_file():
     if not os.path.exists(BUFFER_FILE):
         return
@@ -46,36 +41,30 @@ def send_buffer_file():
                 time.sleep(0.2)
             else:
                 print("Gửi lại thất bại, giữ file lại")
-                return   # dừng, không xoá file
+                return  
 
-    # gửi xong mới xoá file
+
     os.remove(BUFFER_FILE)
     print("Đã gửi xong dữ liệu tồn, xoá file buffer_file")
 
-# =======================
-# callback kết nối
-# =======================
+
 def on_connect(client, userdata, flags, reasonCode, properties=None):
     global connected
     if reasonCode == 0:
         connected = True
         print("Kết nối thành công")
-        send_buffer_file()   # có mạng → gửi file tồn
+        send_buffer_file()   
     else:
         connected = False
         print("Kết nối thất bại, code =", reasonCode)
 
-# =======================
-# callback mất kết nối
-# =======================
+
 def on_disconnect(client, userdata, reasonCode, properties=None):
     global connected
     connected = False
     print("Mất kết nối, code =", reasonCode)
 
-# =======================
-# tạo client MQTT
-# =======================
+
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 client.reconnect_delay_set(min_delay=1, max_delay=10)
 
@@ -87,7 +76,7 @@ print("Đang kết nối MQTT...")
 
 try:
     client.tls_set()
-    client.tls_insecure_set(True)  # để test TLS cho dễ
+    client.tls_insecure_set(True)  
     client.connect(HOST, PORT, 60)
     client.loop_start()
 except Exception as e:
