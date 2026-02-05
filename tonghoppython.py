@@ -38,7 +38,7 @@ def on_disconnect(client,userdata,reasonCode,properties = None):
     global connected
     connected = False
     print("Mất kết nối")
-#hàm lưu giữ liệu khi bị mất mạng
+
 def save_buffer_file(data):
     with open(BUFFER_FILE,"a",encoding="utf-8") as f:
         f.write(json.dumps(data)+"\n")
@@ -88,7 +88,6 @@ def on_message(client, userdata, msg):
 
     print("Nhận message:", topic, payload)
 
-    # ===== ATTRIBUTES =====
     if "attributes/response" in topic:
 
         if "shared" in payload:
@@ -97,7 +96,6 @@ def on_message(client, userdata, msg):
                 print("Chu kỳ gửi mới:", interval)
 
 
-    # ===== RPC =====
     elif "rpc/request" in topic:
 
         request_id = topic.split("/")[-1]
@@ -108,7 +106,7 @@ def on_message(client, userdata, msg):
         print("RPC:", method, params)
 
 
-        # XỬ LÝ LỆNH
+
         if method == "reboot":
 
             print("Đang reboot device...")
