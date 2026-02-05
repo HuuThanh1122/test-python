@@ -135,7 +135,7 @@ def on_message(client, userdata, msg):
             result = "Unknown command"
 
 
-        # GỬI PHẢN HỒI LẠI SERVER
+
         response_topic = RPC_PUBLISH_TOPIC + request_id
 
         client.publish(
