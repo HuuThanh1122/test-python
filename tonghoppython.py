@@ -17,13 +17,14 @@ RPC_PUBLISH_TOPIC =  "v1/devices/me/rpc/response/"
 
 BUFFER_FILE = "buffer2.txt"
 connected = False
-
+telemetry = {}
 def on_connect(client,userdata,flags,reasonCode,properties = None):
     global connected
     if reasonCode == 0:
         connected = True
         print("Kết nối thành công tới thingsboard")
         client.subscribe(ATTR_RESPONSE_TOPIC)
+        client.subscribe(RPC_SUBSCRIBE_TOPIC)
         request = {
             "sharedKeys":"uploadInterval,threshold"
         }
@@ -81,13 +82,78 @@ def send_client_attributes(client):
     print("Đã gửi client attributes lên sever")
 
 def on_message(client, userdata, msg):
-    if "attributes/response" in msg.topic:
-        payload = json.loads(msg.payload.decode())
-        print("Attributes nhận từ server:", payload)
+
+    topic = msg.topic
+    payload = json.loads(msg.payload.decode())
+
+    print("Nhận message:", topic, payload)
+
+    # ===== ATTRIBUTES =====
+    if "attributes/response" in topic:
+
         if "shared" in payload:
             interval = payload["shared"].get("uploadInterval")
             if interval:
                 print("Chu kỳ gửi mới:", interval)
+
+
+    # ===== RPC =====
+    elif "rpc/request" in topic:
+
+        request_id = topic.split("/")[-1]
+
+        method = payload.get("method")
+        params = payload.get("params")
+
+        print("RPC:", method, params)
+
+
+        # XỬ LÝ LỆNH
+        if method == "reboot":
+
+            print("Đang reboot device...")
+            result = "Device rebooted"
+
+
+        elif method == "getStatus":
+
+            result = {
+                "status": "running",
+                "temp": telemetry.get("temperature",0)
+            }
+
+
+        elif method == "setLed":
+
+            if params == True:
+                print("LED ON")
+                result = "LED turned ON"
+            else:
+                print("LED OFF")
+                result = "LED turned OFF"
+
+
+        else:
+            result = "Unknown command"
+
+
+        # GỬI PHẢN HỒI LẠI SERVER
+        response_topic = RPC_PUBLISH_TOPIC + request_id
+
+        client.publish(
+            response_topic,
+            json.dumps(result),
+            qos=1
+        )
+
+        print("Đã phản hồi RPC")
+    # if "attributes/response" in msg.topic:
+    #     payload = json.loads(msg.payload.decode())
+    #     print("Attributes nhận từ server:", payload)
+    #     if "shared" in payload:
+    #         interval = payload["shared"].get("uploadInterval")
+    #         if interval:
+    #             print("Chu kỳ gửi mới:", interval)
 
 
 client = mqtt.Client(client_id=CLIENT_ID,callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
@@ -101,6 +167,7 @@ client.loop_start()
 
 try:
     while True:
+  
         telemetry = {
             "temperature":random.randint(20,40),
             "humidity":random.randint(40,90)
